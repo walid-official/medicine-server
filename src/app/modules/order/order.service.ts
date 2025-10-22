@@ -1,11 +1,9 @@
 import { IMedicine, MedicineModel } from "../medicines/medicine.model";
 import { OrderModel } from "./order.model";
 
-
 interface CreateOrderInput {
   user: {
     name: string;
-    email: string;
     phone?: string;
   };
   items: { medicineId: string; quantity: number }[];
@@ -27,15 +25,17 @@ export const createOrder = async (input: CreateOrderInput) => {
     if (medicine.quantity < item.quantity)
       throw new Error(`Not enough stock for ${medicine.name}`);
 
-    const itemSubtotal = medicine.price * item.quantity;
+    // sold price = medicine.mrp
+    const soldPrice = medicine.mrp;
+    const itemSubtotal = soldPrice * item.quantity;
     subtotal += itemSubtotal;
 
     orderItems.push({
       medicineId: medicine._id,
       name: medicine.name,
       quantity: item.quantity,
-      price: medicine.price,
-      subtotal: itemSubtotal,
+      price: soldPrice,
+      subtotal: parseFloat(itemSubtotal.toFixed(2)),
     });
 
     // reduce stock
@@ -48,9 +48,9 @@ export const createOrder = async (input: CreateOrderInput) => {
   const order = new OrderModel({
     user,
     items: orderItems,
-    subtotal,
-    discount: discount || 0,
-    grandTotal,
+    subtotal: parseFloat(subtotal.toFixed(2)),
+    discount: parseFloat((discount || 0).toFixed(2)),
+    grandTotal: parseFloat(grandTotal.toFixed(2)),
   });
 
   await order.save();

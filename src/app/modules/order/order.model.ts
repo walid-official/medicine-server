@@ -11,7 +11,6 @@ interface IOrderItem {
 export interface IOrder extends Document {
   user: {
     name: string;
-    email: string;
     phone?: string;
   };
   items: IOrderItem[];
@@ -24,7 +23,6 @@ export interface IOrder extends Document {
 const OrderSchema: Schema = new Schema({
   user: {
     name: { type: String, required: true },
-    email: { type: String, required: true },
     phone: { type: String },
   },
   items: [

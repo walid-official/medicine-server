@@ -7,9 +7,10 @@ export interface IMedicine extends Document {
   category: string;
   batchNumber?: string;
   expiryDate: Date;
-  mrp?: number;
+  mrp: number;
   price: number;
   quantity: number;
+  costPrice?: number;
 }
 
 // Define manual categories
@@ -34,8 +35,9 @@ const MedicineSchema: Schema = new Schema(
     category: { type: String, required: true, enum: medicineCategories },
     batchNumber: { type: String, required: false, default: "", trim: true },
     expiryDate: { type: Date, required: true },
-    mrp: { type: Number, required: false, default: 0 },
+    mrp: { type: Number, required: true, default: 0 },
     price: { type: Number, required: true, default: 0 },
+    costPrice: { type: Number, required: false, default: 0 },
     quantity: { type: Number, required: true, min: 0 },
   },
   { timestamps: true }

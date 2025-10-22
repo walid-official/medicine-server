@@ -8,15 +8,16 @@ import expressSession from "express-session";
 import passport from "passport";
 import { envVars } from "./app/config/env";
 import "./app/config/passport";
+import path from "path";
 
 const app = express();
 
 app.use(express.json());
 
-// CORS configuration
+// CORS setup
 app.use(cors({
   origin: "http://localhost:3000",
-  credentials: true,              
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
@@ -31,12 +32,15 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(cookieParser());
 
+// ✅ Serve invoice PDFs (correct folder)
+const invoiceDir = path.join(__dirname, "app/invoices");
+console.log("📂 Serving invoices from:", invoiceDir);
+app.use("/invoices", express.static(invoiceDir));
+
 app.use("/api/v1", router);
 
 app.get("/", (req: Request, res: Response) => {
-  res.status(200).json({
-    message: "Welcome to Backend Server"
-  });
+  res.status(200).json({ message: "Welcome to Backend Server" });
 });
 
 app.use(globalErrorHandler);
