@@ -29,7 +29,7 @@ export const createUserService = async (payload: Partial<IUser>) => {
 
 export const updateUserService = async (userId: string, payload: Partial<IUser>, decodedToken: JwtPayload) => {
 
-    if (decodedToken.role === Role.USER || decodedToken.role === Role.GUIDE) {
+    if (decodedToken.role === Role.USER || decodedToken.role === Role.MANAGER) {
         if (userId !== decodedToken.userId) {
             throw new AppError(401, "You are not authorized")
         }
@@ -45,17 +45,8 @@ export const updateUserService = async (userId: string, payload: Partial<IUser>,
         throw new AppError(401, "You are not authorized")
     }
 
-    /**
-     * email - can not update
-     * name, phone, password address
-     * password - re hashing
-     *  only admin superadmin - role, isDeleted...
-     * 
-     * promoting to superadmin - superadmin
-     */
-
     if (payload.role) {
-        if (decodedToken.role === Role.USER || decodedToken.role === Role.GUIDE) {
+        if (decodedToken.role === Role.USER || decodedToken.role === Role.MANAGER) {
             throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
         }
 
@@ -65,7 +56,7 @@ export const updateUserService = async (userId: string, payload: Partial<IUser>,
     }
 
     if (payload.isActive || payload.isDeleted || payload.isVerified) {
-        if (decodedToken.role === Role.USER || decodedToken.role === Role.GUIDE) {
+        if (decodedToken.role === Role.USER || decodedToken.role === Role.MANAGER) {
             throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
         }
     }

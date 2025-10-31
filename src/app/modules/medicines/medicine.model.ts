@@ -4,13 +4,12 @@ export interface IMedicine extends Document {
   name: string;
   strength?: string;
   manufacturer?: string;
-  category: string;
+  category?: string;
   batchNumber?: string;
   expiryDate: Date;
   mrp: number;
   price: number;
   quantity: number;
-  costPrice?: number;
 }
 
 // Define manual categories
@@ -32,12 +31,11 @@ const MedicineSchema: Schema = new Schema(
     name: { type: String, required: true, trim: true },
     strength: { type: String, required: false, trim: true },
     manufacturer: { type: String, required: false, trim: true },
-    category: { type: String, required: true, enum: medicineCategories },
+    category: { type: String, required: false, default: "Others", enum: medicineCategories },
     batchNumber: { type: String, required: false, default: "", trim: true },
     expiryDate: { type: Date, required: true },
     mrp: { type: Number, required: true, default: 0 },
     price: { type: Number, required: true, default: 0 },
-    costPrice: { type: Number, required: false, default: 0 },
     quantity: { type: Number, required: true, min: 0 },
   },
   { timestamps: true }

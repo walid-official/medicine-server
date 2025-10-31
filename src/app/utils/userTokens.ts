@@ -24,7 +24,7 @@ export const createUserTokens = (user: Partial<IUser>) => {
   const accessToken = generateToken(
     accessPayload,
     envVars.JWT_ACCESS_SECRET,
-    envVars.JWT_ACCESS_EXPIRES || "1m"
+    envVars.JWT_ACCESS_EXPIRES || "24d"
   );
 
   // Refresh token → 7d

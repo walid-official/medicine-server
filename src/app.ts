@@ -11,16 +11,29 @@ import "./app/config/passport";
 import path from "path";
 
 const app = express();
-
 app.use(express.json());
 
-// CORS setup
-app.use(cors({
-  origin: "http://localhost:3000",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://pharmacy-management-sandy.vercel.app",
+];
+
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(expressSession({
   secret: envVars.EXPRESS_SESSION_SECRET,

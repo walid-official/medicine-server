@@ -1,8 +1,8 @@
 {
-  "name": "backend-boilerplate",
+  "name": "Medicins",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
   "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
   "build": "tsc && cp -r src/assets dist/assets",

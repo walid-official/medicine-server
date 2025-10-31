@@ -11,6 +11,14 @@ export const createMedicine = async (data: Partial<IMedicine>) => {
   return medicine.save();
 };
 
+export const createManyMedicines = async (data: Partial<IMedicine>[]) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("No medicine data provided");
+  }
+  return MedicineModel.insertMany(data);
+};
+
+
 // Service
 export const getMedicines = async (
   search?: string,
@@ -47,4 +55,13 @@ export const updateMedicine = async (id: string, data: Partial<IMedicine>) => {
 
 export const deleteMedicine = async (id: string) => {
   return MedicineModel.findByIdAndDelete(id);
+};
+
+
+export const updateMedicineMRP = async (id: string, newMRP: number) => {
+  return MedicineModel.findByIdAndUpdate(
+    id,
+    { $set: { mrp: newMRP } },
+    { new: true }
+  );
 };

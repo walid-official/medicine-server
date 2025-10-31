@@ -19,7 +19,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
   const nearlyDate = new Date(now);
   nearlyDate.setDate(now.getDate() + (nearlyDays || 90));
 
-  // 🧾 Medicine filter
+  //  Medicine filter
   const medMatch: any = {};
   if (category) medMatch.category = category;
   if (status && status !== "all") {
@@ -50,7 +50,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
     },
   ];
 
-  // 🧾 Order filter
+  //  Order filter
   const orderMatch: any = {};
   if (start || end) orderMatch.createdAt = {};
   if (start) orderMatch.createdAt.$gte = new Date(start);
@@ -80,16 +80,16 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
         medicineId: "$items.medicineId",
         name: "$items.name",
         qty: "$items.quantity",
-        salePrice: "$items.price", // বিক্রয়মূল্য
+        salePrice: "$items.price", 
         itemSubtotal: "$items.subtotal",
-        discount: { $ifNull: ["$discount", 0] }, // order-level discount
-        costPrice: "$medDoc.price", // ✅ তোমার কেনা দাম (price field)
+        discount: { $ifNull: ["$discount", 0] }, 
+        costPrice: "$medDoc.price", 
       },
     },
 
     {
       $facet: {
-        // ✅ Total Revenue (discount per order)
+        // Total Revenue (discount per order)
         totalRevenue: [
           {
             $group: {
@@ -106,10 +106,10 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
           },
         ],
 
-        // ✅ Total items sold
+        // Total items sold
         totalItemsSold: [{ $group: { _id: null, itemsSold: { $sum: "$qty" } } }],
 
-        // ✅ Profit calculation (Total sale - Total cost - Discount)
+        // Profit calculation (Total sale - Total cost - Discount)
         totalProfit: [
           {
             $group: {
@@ -134,7 +134,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
           },
         ],
 
-        // 📈 Sales trend
+        //  Sales trend
         salesTrend: [
           {
             $group: {
@@ -146,7 +146,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
           { $sort: { "_id.period": 1 } },
         ],
 
-        // 📊 Medicines sold monthly
+        // Medicines sold monthly
         medicinesSoldMonthly: [
           {
             $group: {
@@ -160,7 +160,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
           { $sort: { "_id.period": 1, qty: -1 } },
         ],
 
-        // 🧾 Top-selling medicines
+        // Top-selling medicines
         topSelling: [
           {
             $group: {
@@ -195,7 +195,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
     },
   ];
 
-  // 🧾 Run both pipelines
+  // Run both pipelines
   const [medResultArr, orderResultArr] = await Promise.all([
     MedicineModel.aggregate(medicineFacet).allowDiskUse(true).exec(),
     OrderModel.aggregate(orderFacetPipeline).allowDiskUse(true).exec(),
