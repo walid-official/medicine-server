@@ -13,8 +13,7 @@ export const createUserTokens = (user: Partial<IUser>) => {
     email: user.email,
     role: user.role,
   };
-
-  // Refresh token payload (role ছাড়া)
+  
   const refreshPayload = {
     userId: user._id,
     email: user.email,
