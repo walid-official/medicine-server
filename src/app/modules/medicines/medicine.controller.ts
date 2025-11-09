@@ -6,6 +6,7 @@ import {
   createManyMedicines,
   createMedicine,
   deleteMedicine,
+  getExpiredMedicines,
   getMedicineById,
   getMedicines,
   updateMedicine,
@@ -27,6 +28,9 @@ import {
 
 export const createMedicineController = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+
+    console.log(req.body)
+
     let result;
 
     if (Array.isArray(req.body)) {
@@ -115,6 +119,29 @@ export const updateMedicineMRPController = catchAsync(
       statusCode: httpStatus.OK,
       message: "Medicine MRP updated successfully",
       data: updatedMedicine,
+    });
+  }
+);
+
+export const getExpiredMedicinesController = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { status = "expired", nearlyDays = "30" } = req.query;
+
+    const result = await getExpiredMedicines(
+      status as "expired" | "nearly" | "all",
+      Number(nearlyDays)
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message:
+        status === "expired"
+          ? "Expired medicines retrieved successfully"
+          : status === "nearly"
+          ? "Nearly expired medicines retrieved successfully"
+          : "All expired and nearly expired medicines retrieved successfully",
+      data: result,
     });
   }
 );

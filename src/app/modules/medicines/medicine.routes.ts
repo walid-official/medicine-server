@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   createMedicineController,
   deleteMedicineController,
+  getExpiredMedicinesController,
   getMedicineByIdController,
   getMedicinesController,
   updateMedicineController,
@@ -45,8 +46,13 @@ router.post(
   validateMedicineRequest,
   createMedicineController
 );
+router.post(
+  "/test",
+  createMedicineController
+);
 
 router.get("/", checkAuth(...Object.values(Role)), getMedicinesController);
+router.get("/expired", checkAuth(...Object.values(Role)), getExpiredMedicinesController);
 router.get("/:id", checkAuth(...Object.values(Role)), getMedicineByIdController);
 router.put("/:id", checkAuth(...Object.values(Role)), updateMedicineController);
 router.delete("/:id", checkAuth(...Object.values(Role)), deleteMedicineController);

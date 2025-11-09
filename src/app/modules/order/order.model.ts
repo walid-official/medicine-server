@@ -1,7 +1,8 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+// src/modules/orders/order.model.ts
+import mongoose, { Document, Schema } from "mongoose";
 
-interface IOrderItem {
-  medicineId: Types.ObjectId;
+export interface IOrderItem {
+  medicineId: mongoose.Types.ObjectId;
   name: string;
   quantity: number;
   price: number;
@@ -9,35 +10,42 @@ interface IOrderItem {
 }
 
 export interface IOrder extends Document {
+  _id: mongoose.Types.ObjectId,
   user: {
     name: string;
     phone?: string;
   };
   items: IOrderItem[];
   subtotal: number;
-  discount?: number;
+  discount: number;
   grandTotal: number;
+  invoiceUrl?: string; // <-- new field
   createdAt: Date;
+  updatedAt: Date;
 }
 
-const OrderSchema: Schema = new Schema({
-  user: {
-    name: { type: String, required: true },
-    phone: { type: String },
-  },
-  items: [
-    {
-      medicineId: { type: Schema.Types.ObjectId, ref: "Medicine", required: true },
-      name: { type: String, required: true },
-      quantity: { type: Number, required: true },
-      price: { type: Number, required: true },
-      subtotal: { type: Number, required: true },
-    },
-  ],
+const OrderItemSchema = new Schema<IOrderItem>({
+  
+  medicineId: { type: Schema.Types.ObjectId, ref: "Medicine", required: true },
+  name: { type: String, required: true },
+  quantity: { type: Number, required: true },
+  price: { type: Number, required: true },
   subtotal: { type: Number, required: true },
-  discount: { type: Number, default: 0 },
-  grandTotal: { type: Number, required: true },
-  createdAt: { type: Date, default: Date.now },
 });
+
+const OrderSchema = new Schema<IOrder>(
+  {
+    user: {
+      name: { type: String, required: true },
+      phone: { type: String },
+    },
+    items: { type: [OrderItemSchema], default: [] },
+    subtotal: { type: Number, required: true },
+    discount: { type: Number, default: 0 },
+    grandTotal: { type: Number, required: true },
+    invoiceUrl: { type: String }, // <-- stored Cloudinary URL
+  },
+  { timestamps: true }
+);
 
 export const OrderModel = mongoose.model<IOrder>("Order", OrderSchema);

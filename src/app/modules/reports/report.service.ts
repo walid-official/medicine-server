@@ -17,9 +17,9 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
 
   const now = new Date();
   const nearlyDate = new Date(now);
-  nearlyDate.setDate(now.getDate() + (nearlyDays || 90));
+  nearlyDate.setDate(now.getDate() + nearlyDays);
 
-  //  Medicine filter
+  // -------- Medicine Filters --------
   const medMatch: any = {};
   if (category) medMatch.category = category;
   if (status && status !== "all") {
@@ -27,13 +27,8 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
     if (status === "nearly") medMatch.expiryDate = { $gte: now, $lte: nearlyDate };
     if (status === "in-stock") medMatch.quantity = { $gt: 0 };
   }
-  if (start || end) {
-    medMatch.createdAt = {};
-    if (start) medMatch.createdAt.$gte = new Date(start);
-    if (end) medMatch.createdAt.$lte = new Date(end);
-    if (!Object.keys(medMatch.createdAt).length) delete medMatch.createdAt;
-  }
 
+  // Total SKUs & Units always dynamic
   const medicineFacet: mongoose.PipelineStage[] = [
     { $match: medMatch },
     {
@@ -50,11 +45,15 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
     },
   ];
 
-  //  Order filter
+  // -------- Order Filters --------
   const orderMatch: any = {};
   if (start || end) orderMatch.createdAt = {};
   if (start) orderMatch.createdAt.$gte = new Date(start);
-  if (end) orderMatch.createdAt.$lte = new Date(end);
+  if (end) {
+    const endDate = new Date(end);
+    endDate.setHours(23, 59, 59, 999);
+    orderMatch.createdAt.$lte = endDate;
+  }
   if (!Object.keys(orderMatch).length) delete orderMatch.createdAt;
 
   const dateFormat = groupBy === "week" ? "%Y-%U" : "%Y-%m";
@@ -73,101 +72,100 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
     { $unwind: "$medDoc" },
     ...(category ? [{ $match: { "medDoc.category": category } }] : []),
 
+    // Group by order to get orderRevenue and discount
     {
-      $project: {
-        _id: 1,
-        orderCreatedAt: "$createdAt",
-        medicineId: "$items.medicineId",
-        name: "$items.name",
-        qty: "$items.quantity",
-        salePrice: "$items.price", 
-        itemSubtotal: "$items.subtotal",
-        discount: { $ifNull: ["$discount", 0] }, 
-        costPrice: "$medDoc.price", 
+      $group: {
+        _id: "$_id",
+        orderCreatedAt: { $first: "$createdAt" },
+        discount: { $first: { $ifNull: ["$discount", 0] } },
+        items: {
+          $push: {
+            medicineId: "$items.medicineId",
+            name: "$items.name",
+            qty: "$items.quantity",
+            price: "$items.price",
+            subtotal: "$items.subtotal",
+            // ✅ CHANGED: কস্ট/কানা প্রাইস (per unit) Medicines থেকে নিয়ে আইটেমে রেখে দিচ্ছি
+            costPrice: { $ifNull: ["$medDoc.price", 0] },
+          },
+        },
+        orderRevenue: { $sum: "$items.subtotal" }, // sum before order-level discount
+      },
+    },
+
+    // Unwind items for proportional discount & per-item profit
+    { $unwind: "$items" },
+
+    {
+      $addFields: {
+        // itemRevenue = আইটেম সাবটোটাল - (অর্ডার ডিসকাউন্টের প্রো-রাটা অংশ)
+        itemRevenue: {
+          $subtract: [
+            "$items.subtotal",
+            {
+              $multiply: [
+                "$items.subtotal",
+                { $cond: [{ $eq: ["$orderRevenue", 0] }, 0, { $divide: ["$discount", "$orderRevenue"] }] },
+              ],
+            },
+          ],
+        },
+        // ✅ CHANGED: itemCost = kana price (from medicines.price) * qty
+        itemCost: {
+          $multiply: [
+            { $ifNull: ["$items.costPrice", 0] },
+            { $ifNull: ["$items.qty", 0] },
+          ],
+        },
       },
     },
 
     {
       $facet: {
-        // Total Revenue (discount per order)
         totalRevenue: [
-          {
-            $group: {
-              _id: "$_id",
-              orderRevenue: { $sum: "$itemSubtotal" },
-              orderDiscount: { $first: "$discount" },
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              revenue: { $sum: { $subtract: ["$orderRevenue", "$orderDiscount"] } },
-            },
-          },
+          { $group: { _id: null, revenue: { $sum: "$itemRevenue" } } },
         ],
-
-        // Total items sold
-        totalItemsSold: [{ $group: { _id: null, itemsSold: { $sum: "$qty" } } }],
-
-        // Profit calculation (Total sale - Total cost - Discount)
+        totalItemsSold: [
+          { $group: { _id: null, itemsSold: { $sum: "$items.qty" } } },
+        ],
         totalProfit: [
           {
             $group: {
-              _id: "$_id",
-              totalSaleValue: { $sum: { $multiply: ["$salePrice", "$qty"] } },
-              totalCostValue: { $sum: { $multiply: ["$costPrice", "$qty"] } },
-              orderDiscount: { $first: "$discount" },
-            },
-          },
-          {
-            $group: {
               _id: null,
-              profit: {
-                $sum: {
-                  $subtract: [
-                    { $subtract: ["$totalSaleValue", "$totalCostValue"] },
-                    "$orderDiscount",
-                  ],
-                },
-              },
+              // ✅ CHANGED: profit = revenue (after discount) − cost (kana price × qty)
+              profit: { $sum: { $subtract: ["$itemRevenue", "$itemCost"] } },
             },
           },
         ],
-
-        //  Sales trend
         salesTrend: [
           {
             $group: {
               _id: { period: { $dateToString: { format: dateFormat, date: "$orderCreatedAt" } } },
-              revenue: { $sum: "$itemSubtotal" },
-              itemsSold: { $sum: "$qty" },
+              revenue: { $sum: "$itemRevenue" },
+              itemsSold: { $sum: "$items.qty" },
             },
           },
           { $sort: { "_id.period": 1 } },
         ],
-
-        // Medicines sold monthly
         medicinesSoldMonthly: [
           {
             $group: {
               _id: {
-                med: "$medicineId",
+                med: "$items.medicineId",
                 period: { $dateToString: { format: dateFormat, date: "$orderCreatedAt" } },
               },
-              qty: { $sum: "$qty" },
+              qty: { $sum: "$items.qty" },
             },
           },
           { $sort: { "_id.period": 1, qty: -1 } },
         ],
-
-        // Top-selling medicines
         topSelling: [
           {
             $group: {
-              _id: "$medicineId",
-              name: { $first: "$name" },
-              qty: { $sum: "$qty" },
-              revenue: { $sum: "$itemSubtotal" },
+              _id: "$items.medicineId",
+              name: { $first: "$items.name" },
+              qty: { $sum: "$items.qty" },
+              revenue: { $sum: "$itemRevenue" },
             },
           },
           { $sort: { qty: -1 } },
@@ -195,13 +193,12 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
     },
   ];
 
-  // Run both pipelines
+  // Run pipelines
   const [medResultArr, orderResultArr] = await Promise.all([
     MedicineModel.aggregate(medicineFacet).allowDiskUse(true).exec(),
     OrderModel.aggregate(orderFacetPipeline).allowDiskUse(true).exec(),
   ]);
 
-  // Extract data safely
   const medResult = medResultArr[0] || {};
   const orderResult = orderResultArr[0] || {};
 

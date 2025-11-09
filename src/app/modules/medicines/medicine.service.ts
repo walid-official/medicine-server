@@ -65,3 +65,28 @@ export const updateMedicineMRP = async (id: string, newMRP: number) => {
     { new: true }
   );
 };
+
+
+export const getExpiredMedicines = async (status: "expired" | "nearly" | "all" = "expired", nearlyDays: number = 30) => {
+  const now = new Date();
+  let query = {};
+
+  if (status === "expired") {
+    // Already expired
+    query = { expiryDate: { $lt: now } };
+  } else if (status === "nearly") {
+    // Expiring soon (within N days)
+    const upcoming = new Date();
+    upcoming.setDate(now.getDate() + nearlyDays);
+    query = { expiryDate: { $gte: now, $lte: upcoming } };
+  } else if (status === "all") {
+    // Both expired and nearly expired
+    const upcoming = new Date();
+    upcoming.setDate(now.getDate() + nearlyDays);
+    query = { expiryDate: { $lte: upcoming } };
+  }
+
+  const medicines = await MedicineModel.find(query).sort({ expiryDate: 1 });
+
+  return { total: medicines.length, medicines };
+};
