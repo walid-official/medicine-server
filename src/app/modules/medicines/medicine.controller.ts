@@ -13,19 +13,6 @@ import {
   updateMedicineMRP,
 } from "./medicine.service";
 
-// Create a new medicine
-// export const createMedicineController = catchAsync(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     const medicine = await createMedicine(req.body);
-//     sendResponse(res, {
-//       success: true,
-//       statusCode: httpStatus.CREATED,
-//       message: "Medicine created successfully",
-//       data: medicine,
-//     });
-//   }
-// );
-
 export const createMedicineController = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
 

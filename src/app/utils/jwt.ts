@@ -5,8 +5,8 @@ export const generateToken = (
   secret: string,
   expiresIn: string
 ) => {
-  console.log("🔑 [JWT] Generating token with secret:", secret); // Debug log
-  console.log("📦 [JWT] Payload:", payload);
+  // console.log("🔑 [JWT] Generating token with secret:", secret); // Debug log
+  // console.log("📦 [JWT] Payload:", payload);
 
   const token = jwt.sign(payload, secret, {
     expiresIn,
@@ -17,13 +17,13 @@ export const generateToken = (
 };
 
 export const verifyToken = (token: string, secret: string) => {
-  console.log("🔍 [JWT] Verifying token...");
-  console.log("🟡 [JWT] Token received:", token);
-  console.log("🔑 [JWT] Using secret:", secret);
+  // console.log("🔍 [JWT] Verifying token...");
+  // console.log("🟡 [JWT] Token received:", token);
+  // console.log("🔑 [JWT] Using secret:", secret);
 
   try {
     const verifiedToken = jwt.verify(token, secret);
-    console.log("✅ [JWT] Token verified:", verifiedToken);
+    // console.log("✅ [JWT] Token verified:", verifiedToken);
     return verifiedToken;
   } catch (err) {
     console.error("❌ [JWT] Verification failed:", err);

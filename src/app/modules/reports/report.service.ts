@@ -12,7 +12,14 @@ interface ReportFilters {
 }
 
 export const getDashboardReport = async (filters: ReportFilters = {}) => {
-  const { start, end, category, status = "all", nearlyDays = 90, groupBy = "month" } = filters;
+  const {
+    start,
+    end,
+    category,
+    status = "all",
+    nearlyDays = 90,
+    groupBy = "month",
+  } = filters;
 
   const now = new Date();
   const nearlyDate = new Date(now);
@@ -33,26 +40,43 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
       $facet: {
         totalSKUs: [{ $count: "count" }],
         totalUnits: [{ $group: { _id: null, units: { $sum: "$quantity" } } }],
-        expiredList: [{ $match: { expiryDate: { $lt: now } } }, { $count: "count" }],
-        nearlyExpiryList: [{ $match: { expiryDate: { $gte: now, $lte: nearlyDate } } }, { $count: "count" }],
+        expiredList: [
+          { $match: { expiryDate: { $lt: now } } },
+          { $count: "count" },
+        ],
+        nearlyExpiryList: [
+          { $match: { expiryDate: { $gte: now, $lte: nearlyDate } } },
+          { $count: "count" },
+        ],
         byCategory: [
-          { $group: { _id: "$category", skus: { $sum: 1 }, units: { $sum: "$quantity" } } },
+          {
+            $group: {
+              _id: "$category",
+              skus: { $sum: 1 },
+              units: { $sum: "$quantity" },
+            },
+          },
           { $sort: { units: -1 } },
         ],
       },
     },
   ];
 
-  // ------------------ Order Filters ------------------
+  // ------------------ Order Filters (Timezone Fixed) ------------------
   const orderMatch: any = {};
   if (start || end) orderMatch.createdAt = {};
-  if (start) orderMatch.createdAt.$gte = new Date(start);
+
+  // Convert start & end to UTC range (avoid previous-day shift)
+  if (start) {
+    const startDate = new Date(`${start}T00:00:00.000Z`); // start of day UTC
+    orderMatch.createdAt.$gte = startDate;
+  }
   if (end) {
-    const endDate = new Date(end);
-    endDate.setHours(23, 59, 59, 999);
+    const endDate = new Date(`${end}T23:59:59.999Z`); // end of day UTC
     orderMatch.createdAt.$lte = endDate;
   }
-  if (!Object.keys(orderMatch).length) delete orderMatch.createdAt;
+
+  if (!Object.keys(orderMatch.createdAt || {}).length) delete orderMatch.createdAt;
 
   const dateFormat = groupBy === "week" ? "%Y-%U" : "%Y-%m";
 
@@ -64,9 +88,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
         totalRevenue: [
           { $group: { _id: null, revenue: { $sum: "$grandTotal" } } },
         ],
-        totalOrders: [
-          { $group: { _id: null, count: { $sum: 1 } } },
-        ],
+        totalOrders: [{ $group: { _id: null, count: { $sum: 1 } } }],
 
         // 🟢 Total Kana Price (from medicineId lookup)
         totalKanaPrice: [
@@ -92,7 +114,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
           },
         ],
 
-        // 🟢 Total Units Sold (sum of all sold quantities)
+        // 🟢 Total Units Sold
         totalUnitsSold: [
           { $unwind: "$items" },
           {
@@ -103,7 +125,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
           },
         ],
 
-        // 🟢 Top Selling Products (multiple)
+        // 🟢 Top Selling Products
         topSellingProducts: [
           { $unwind: "$items" },
           {
@@ -124,18 +146,25 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
             },
           },
           { $sort: { totalSoldUnits: -1 } },
-          { $limit: 5 }, // top 5 best-selling
+          { $limit: 5 },
         ],
 
+        // 🟢 Sales Trend (by month/week)
         salesTrend: [
           {
             $group: {
-              _id: { period: { $dateToString: { format: dateFormat, date: "$createdAt" } } },
+              _id: {
+                period: {
+                  $dateToString: { format: dateFormat, date: "$createdAt" },
+                },
+              },
               revenue: { $sum: "$grandTotal" },
             },
           },
           { $sort: { "_id.period": 1 } },
         ],
+
+        // 🟢 Top Customers
         topCustomers: [
           {
             $group: {
@@ -195,7 +224,7 @@ export const getDashboardReport = async (filters: ReportFilters = {}) => {
     charts: {
       salesTrend,
       topCustomers,
-      topSelling, 
+      topSelling,
     },
   };
 };

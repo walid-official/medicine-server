@@ -7,8 +7,13 @@ interface PaginationOptions {
 }
 
 export const createMedicine = async (data: Partial<IMedicine>) => {
-  const medicine = new MedicineModel(data);
-  return medicine.save();
+  try {
+    const result = await MedicineModel.create(data);
+    return result;
+  } catch (err) {
+    console.error("Medicine create failed:", err);
+    throw err;
+  }
 };
 
 export const createManyMedicines = async (data: Partial<IMedicine>[]) => {

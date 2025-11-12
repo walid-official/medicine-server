@@ -42,20 +42,16 @@ const validateMedicineRequest = (
 
 router.post(
   "/",
-  checkAuth(...Object.values(Role)),
+  checkAuth((Role.ADMIN)),
   validateMedicineRequest,
   createMedicineController
 );
-router.post(
-  "/test",
-  createMedicineController
-);
 
-router.get("/", checkAuth(...Object.values(Role)), getMedicinesController);
-router.get("/expired", checkAuth(...Object.values(Role)), getExpiredMedicinesController);
-router.get("/:id", checkAuth(...Object.values(Role)), getMedicineByIdController);
-router.put("/:id", checkAuth(...Object.values(Role)), updateMedicineController);
-router.delete("/:id", checkAuth(...Object.values(Role)), deleteMedicineController);
-router.patch("/:id/mrp", checkAuth(...Object.values(Role)), updateMedicineMRPController);
+router.get("/", checkAuth((Role.ADMIN)), getMedicinesController);
+router.get("/expired", checkAuth((Role.ADMIN)), getExpiredMedicinesController);
+router.get("/:id", checkAuth((Role.ADMIN)), getMedicineByIdController);
+router.put("/:id", checkAuth((Role.ADMIN)), updateMedicineController);
+router.delete("/:id", checkAuth((Role.ADMIN)), deleteMedicineController);
+router.patch("/:id/mrp", checkAuth((Role.MANAGER,Role.ADMIN)), updateMedicineMRPController);
 
 export const MedicineRoutes = router;

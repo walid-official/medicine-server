@@ -19,13 +19,12 @@ export interface IOrder extends Document {
   subtotal: number;
   discount: number;
   grandTotal: number;
-  invoiceUrl?: string; // <-- new field
+  invoiceUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const OrderItemSchema = new Schema<IOrderItem>({
-  
   medicineId: { type: Schema.Types.ObjectId, ref: "Medicine", required: true },
   name: { type: String, required: true },
   quantity: { type: Number, required: true },
@@ -43,7 +42,7 @@ const OrderSchema = new Schema<IOrder>(
     subtotal: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     grandTotal: { type: Number, required: true },
-    invoiceUrl: { type: String }, // <-- stored Cloudinary URL
+    invoiceUrl: { type: String },
   },
   { timestamps: true }
 );
