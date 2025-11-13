@@ -39,22 +39,22 @@ export const createMedicineController = catchAsync(
   }
 );
 
-export const getMedicinesController = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { search, page, limit } = req.query;
-    const result = await getMedicines(
-      search as string,
-      Number(page) || 1,
-      Number(limit) || 10
-    );
-    sendResponse(res, {
-      success: true,
-      statusCode: httpStatus.OK,
-      message: "Medicines retrieved successfully",
-      data: result,
-    });
-  }
-);
+export const getMedicinesController = catchAsync(async (req, res) => {
+  const { search, page, limit } = req.query;
+
+  const result = await getMedicines(
+    search as string,
+    Number(page) || 1,
+    Number(limit) || 10
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Medicines retrieved successfully",
+    data: result,
+  });
+});
 
 // Get medicine by ID
 export const getMedicineByIdController = catchAsync(

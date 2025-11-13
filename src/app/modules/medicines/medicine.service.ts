@@ -25,26 +25,43 @@ export const createManyMedicines = async (data: Partial<IMedicine>[]) => {
 
 
 // Service
-export const getMedicines = async (
-  search?: string,
-  page: number = 1,
-  limit: number = 10
-) => {
+export const getMedicines = async (search?: string, page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+
+  // Use indexed text search
   const query = search
-    ? {
-        $or: [
-          { name: { $regex: search, $options: "i" } },
-          { category: { $regex: search, $options: "i" } },
-          { batchNumber: { $regex: search, $options: "i" } },
-        ],
-      }
+    ? { $text: { $search: search } }
     : {};
 
-  const medicines = await MedicineModel.find(query)
-    .skip((page - 1) * limit)
-    .limit(limit);
+  //  One DB call using aggregate + facet
+  const [result] = await MedicineModel.aggregate([
+    { $match: query },
+    {
+      $facet: {
+        medicines: [
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $project: {
+              name: 1,
+              category: 1,
+              price: 1,
+              expiryDate: 1,
+              mrp: 1,
+              quantity: 1,
+              batchNumber: 1,
+              manufacturer: 1,
+            },
+          },
+        ],
+        total: [{ $count: "count" }],
+      },
+    },
+  ]);
 
-  const total = await MedicineModel.countDocuments(query);
+  const medicines = result.medicines || [];
+  const total = result.total[0]?.count || 0;
 
   return { medicines, total, page, limit };
 };

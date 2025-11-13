@@ -43,3 +43,10 @@ const MedicineSchema: Schema = new Schema(
 
 export const MedicineModel = mongoose.model<IMedicine>("Medicine", MedicineSchema);
 export { medicineCategories };
+
+// medicine.model.ts
+MedicineSchema.index({
+  name: "text",
+  category: "text",
+  batchNumber: "text",
+});
