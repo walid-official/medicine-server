@@ -8,7 +8,7 @@ import { ReportRoutes } from "../modules/reports/report.controller";
 export const router = Router();
 
 const moduleRoutes = [
-  { path: "/user", route: UserRoutes },
+  { path: "/users", route: UserRoutes },
   { path: "/auth", route: AuthRoutes },
   { path: "/medicines", route: MedicineRoutes },
   { path: "/orders", route: OrderRoutes },

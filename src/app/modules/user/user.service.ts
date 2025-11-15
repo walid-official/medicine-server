@@ -90,3 +90,44 @@ export const getLoggedInRoleService = async (decodedToken: JwtPayload) => {
 
   return user
 }
+
+export const updatePasswordService = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+  decodedToken: JwtPayload
+) => {
+
+  // Only admin is allowed
+  if (decodedToken.role !== Role.ADMIN) {
+    throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // Admin cannot modify SUPER_ADMIN
+  if (user.role === Role.SUPER_ADMIN) {
+    throw new AppError(httpStatus.FORBIDDEN, "You cannot modify SUPER ADMIN");
+  }
+
+  // Check old password
+  const isPasswordMatch = await bcryptjs.compare(oldPassword, user.password ?? "");
+  if (!isPasswordMatch) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Old password is incorrect");
+  }
+
+  // Hash new password
+  const hashedNewPassword = await bcryptjs.hash(
+    newPassword,
+    Number(envVars.BCRYPT_SALT_ROUND)
+  );
+
+  user.password = hashedNewPassword;
+  await user.save();
+
+  return { message: "Password updated successfully" };
+};
+

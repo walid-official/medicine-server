@@ -1,6 +1,6 @@
 import { catchAsync } from "../../utils/catchAsync"
 import { sendResponse } from "../../utils/sendResponse"
-import { createUserService, getLoggedInRoleService, getLoggedInUserService, updateUserService } from "./user.service"
+import { createUserService, getLoggedInRoleService, getLoggedInUserService, updatePasswordService, updateUserService } from "./user.service"
 import httpStatus from "http-status"
 import { Request, Response, NextFunction } from "express"
 import { JwtPayload } from "jsonwebtoken"
@@ -80,3 +80,25 @@ export const getLoggedInRoleUser = catchAsync(async (req: Request, res: Response
   })
 })
 
+export const updatePasswordController = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.params.id;
+    const { oldPassword, newPassword } = req.body;
+
+    const decodedToken = req.user as JwtPayload;
+
+    const result = await updatePasswordService(
+      userId,
+      oldPassword,
+      newPassword,
+      decodedToken
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Password Updated Successfully",
+      data: result,
+    });
+  }
+);
