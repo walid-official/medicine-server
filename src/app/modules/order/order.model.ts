@@ -11,9 +11,9 @@ export interface IOrderItem {
 
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
-  user: {
-    name: string;
-    phone: string;
+  user?: {
+    name?: string;
+    phone?: string;
   };
   items: IOrderItem[];
   subtotal: number;
@@ -35,8 +35,8 @@ const OrderItemSchema = new Schema<IOrderItem>({
 const OrderSchema = new Schema<IOrder>(
   {
     user: {
-      name: { type: String, required: true },
-      phone: { type: String, required: [true, "Phone number is required"] }, 
+      name: { type: String, required: false },
+      phone: { type: String, required: false }, 
     },
     items: { type: [OrderItemSchema], default: [] },
     subtotal: { type: Number, required: true },

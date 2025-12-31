@@ -92,11 +92,17 @@ export const createOrderController = catchAsync(
     if (fs.existsSync(boldFontPath)) doc.font(boldFontPath);
     doc.fontSize(16).text("Invoice", { align: "left", underline: true }).moveDown(0.5);
 
-    // Customer Info
+    // Customer Info (only if user information exists)
     if (fs.existsSync(normalFontPath)) doc.font(normalFontPath);
-    doc.fontSize(12).text(`Customer Name: ${user.name}`);
-    if (user.phone) doc.text(`Customer Phone: ${user.phone}`);
-    doc.moveDown(1);
+    if (user && user.name) {
+      doc.fontSize(12).text(`Customer Name: ${user.name}`);
+    }
+    if (user && user.phone) {
+      doc.text(`Customer Phone: ${user.phone}`);
+    }
+    if (user && (user.name || user.phone)) {
+      doc.moveDown(1);
+    }
 
     // Items Purchased
     doc.fontSize(12).text("Items Purchased:", { underline: true }).moveDown(0.5);

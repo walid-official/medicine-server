@@ -5,8 +5,8 @@ import { OrderModel } from "./order.model";
 import mongoose from "mongoose";
 
 interface CreateOrderInput {
-  user: {
-    name: string;
+  user?: {
+    name?: string;
     phone?: string;
   };
   items: { medicineId: string; quantity: number }[];
@@ -73,7 +73,7 @@ export const createOrder = async (input: CreateOrderInput) => {
   const grandTotal = subtotal - (discount || 0);
 
   const order = new OrderModel({
-    user,
+    ...(user && { user }),
     items: orderItems,
     subtotal: parseFloat(subtotal.toFixed(2)),
     discount: parseFloat((discount || 0).toFixed(2)),
@@ -184,13 +184,19 @@ export const getAllOrders = async (filters: OrderFilters = {}): Promise<Paginate
     andClauses.push({ createdAt: { $gte: startDate, $lte: endDate } });
   }
 
-  // Search by customer name
+  // Search by customer name (only if user exists)
   if (customerName && customerName.trim()) {
     const regex = escapeRegex(customerName.trim());
     andClauses.push({
-      $or: CUSTOMER_NAME_FIELDS.map((field) => ({
-        [field]: { $regex: regex, $options: "i" },
-      })),
+      $or: [
+        ...CUSTOMER_NAME_FIELDS.map((field) => ({
+          [field]: { $regex: regex, $options: "i" },
+        })),
+        // Also match orders without user info if searching for empty/null
+        ...(customerName.trim().toLowerCase() === "null" || customerName.trim().toLowerCase() === "none" 
+          ? [{ user: { $exists: false } }, { user: null }]
+          : []),
+      ],
     });
   }
 
