@@ -47,7 +47,7 @@ router.post(
   createMedicineController
 );
 
-router.get("/", checkAuth((Role.ADMIN)), getMedicinesController);
+router.get("/", checkAuth((Role.ADMIN,Role.MANAGER)), getMedicinesController);
 router.get("/expired", checkAuth((Role.ADMIN)), getExpiredMedicinesController);
 router.get("/:id", checkAuth((Role.ADMIN)), getMedicineByIdController);
 router.put("/:id", checkAuth((Role.ADMIN)), updateMedicineController);
